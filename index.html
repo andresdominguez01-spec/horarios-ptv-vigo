@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Pontevedra ⇄ Vigo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PO ⇄ Vigo">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1b2430" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1b2430" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" type="image/png" href="icon.png">
+<style>
+  :root {
+    --bg: #ffffff; --text: #16191d; --muted: #5f6873; --line: #dcdfe4; --soft: #f3f4f6; --band: #1b2430;
+    --bus: #f2a900; --bus-ink: #1b1600;
+    --md: #6f2da8; --ave: #c8202f; --alvia: #1a5fc4; --reg: #0b7f72;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #111418; --text: #eef0f3; --muted: #9aa3ae; --line: #2b313a; --soft: #1a1e24; --band: #1b2430;
+            --md: #9a5fd6; --ave: #e5505d; --alvia: #4f8fe8; --reg: #22a897; }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; background: var(--band); }
+  body { margin: 0; background: var(--bg); color: var(--text); min-height: 100vh;
+         font: 16px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+  button, select { font: inherit; color: inherit; }
+  .num { font-variant-numeric: tabular-nums; }
+  .wrap { max-width: 520px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+
+  /* Cabecera */
+  header { background: var(--band); color: #fff; padding-top: env(safe-area-inset-top); }
+  header .wrap { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding-top: 14px; padding-bottom: 14px; }
+  header h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: .01em; }
+  header .clock { font-size: 14px; color: #c5ccd6; white-space: nowrap; }
+  header .clock b { color: #fff; font-weight: 700; }
+
+  main { padding-top: 14px; padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
+
+  /* Sentido */
+  .dir { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--text); border-radius: 6px; overflow: hidden; }
+  .dir button { border: 0; background: transparent; padding: 11px 6px; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .dir button[aria-pressed="true"] { background: var(--text); color: var(--bg); }
+  .loc { display: block; width: 100%; text-align: left; background: none; border: 0; padding: 8px 0 0; font-size: 13px; color: var(--muted); cursor: pointer; }
+
+  /* Filtro */
+  .filters { display: flex; gap: 22px; border-bottom: 1px solid var(--line); margin-top: 14px; }
+  .filters button { border: 0; background: none; padding: 9px 0 8px; font-size: 14.5px; font-weight: 600; color: var(--muted);
+                    border-bottom: 3px solid transparent; margin-bottom: -1px; cursor: pointer; }
+  .filters button[aria-pressed="true"] { color: var(--text); border-bottom-color: var(--text); }
+
+  /* Etiqueta de servicio */
+  .svc { display: inline-block; min-width: 46px; text-align: center; padding: 2px 6px; border-radius: 3px;
+         font-size: 12px; font-weight: 800; letter-spacing: .04em; color: #fff; background: var(--k); vertical-align: 1px; }
+  .k-bus { --k: var(--bus); } .k-bus .svc { color: var(--bus-ink); }
+  .k-md { --k: var(--md); } .k-ave { --k: var(--ave); } .k-alvia { --k: var(--alvia); } .k-reg { --k: var(--reg); }
+
+  /* Próxima salida */
+  .next { margin-top: 16px; background: var(--soft); border-left: 5px solid var(--k); border-radius: 0 6px 6px 0; padding: 12px 14px 14px; }
+  .next .lbl { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .next .mid { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .next .dep { font-size: 54px; line-height: 1.1; font-weight: 700; letter-spacing: -.02em; }
+  .next .in { font-size: 20px; font-weight: 700; white-space: nowrap; }
+  .next .what { font-size: 15px; font-weight: 600; margin-top: 2px; }
+  .next .det { font-size: 14px; color: var(--muted); margin-top: 3px; }
+
+  /* Lista */
+  h2 { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 22px 0 0; padding-bottom: 7px; border-bottom: 1px solid var(--text); }
+  .list { list-style: none; margin: 0; padding: 0; }
+  .row { display: grid; grid-template-columns: 64px 1fr auto; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .row .dep { font-size: 20px; font-weight: 700; }
+  .row .what { font-size: 14.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .det { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .row .in { font-size: 14px; font-weight: 600; color: var(--muted); white-space: nowrap; text-align: right; }
+
+  .empty { margin-top: 16px; background: var(--soft); border-radius: 6px; padding: 18px 14px; }
+  .empty b { display: block; font-size: 17px; margin-bottom: 4px; }
+  .empty p { margin: 0; color: var(--muted); font-size: 14px; }
+
+  footer { margin-top: 26px; font-size: 12.5px; color: var(--muted); }
+  footer label { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--text); font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+  footer select { border: 1px solid var(--line); background: var(--bg); border-radius: 6px; padding: 7px 8px; font-size: 14px; max-width: 62%; }
+  footer p { margin: 0; }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>Pontevedra – Vigo</h1>
+  <span class="clock num" id="clock"></span>
+</div></header>
+<main class="wrap">
+  <div class="dir" id="dir" role="group" aria-label="Sentido del trayecto">
+    <button type="button" data-from="P">Desde Pontevedra</button>
+    <button type="button" data-from="V">Desde Vigo</button>
+  </div>
+  <button class="loc" id="loc" type="button" title="Volver a comprobar mi ubicación"></button>
+
+  <div class="filters" id="filters"></div>
+  <div id="next"></div>
+  <h2 id="h2"></h2>
+  <ul class="list" id="list"></ul>
+
+  <footer>
+    <label>Horario de
+      <select id="daysel">
+        <option value="auto">Hoy (automático)</option>
+        <option value="L">Laborable (lun–vie)</option>
+        <option value="S">Sábado</option>
+        <option value="D">Domingo / festivo</option>
+      </select>
+    </label>
+    <p>Horarios introducidos a mano (noviembre de 2026). No incluyen retrasos ni cambios posteriores de Renfe o Monbus. En festivos, elige «Domingo / festivo».</p>
+  </footer>
+</main>
+
+<script>
+/* ============================================================
+   DATOS — para actualizar horarios, edita solo este bloque.
+   Formato: "salida-llegada"; una p al final = bus con paradas.
+   L = lunes a viernes · S = sábado · D = domingo
+   ============================================================ */
+const BUS = {
+  // Vigo (Estación Intermodal) → Pontevedra (Estación de Autobuses)
+  VP: {
+    L: "05:55-06:20 07:35-07:55 08:45-09:05 09:35-09:55 09:40-10:35p 10:00-10:25 10:45-11:05 11:00-11:55p 11:30-12:00 12:05-12:25 12:30-13:25p 12:35-12:55 13:15-13:36 14:00-14:21 14:45-15:05 15:00-15:55p 15:35-15:56 16:15-16:45 16:30-17:25p 16:35-16:55 17:00-17:20 17:35-17:56 17:45-18:40p 18:35-18:55 18:35-19:00 19:00-19:25 19:30-19:50 19:45-20:40p 20:20-20:40 20:30-20:51 20:45-21:06 21:30-21:50 22:30-23:25p",
+    S: "07:35-07:55 08:45-09:05 09:35-09:55 10:45-11:05 10:45-11:40p 11:30-12:00 12:35-12:55 12:40-13:00 13:15-13:36 14:00-14:21 15:00-15:30 15:35-15:55 16:35-16:55 17:30-18:25p 18:35-18:55 18:35-19:00 19:00-19:25 19:30-19:50 20:30-20:51 20:45-21:06 22:30-23:25p",
+    D: "07:35-07:55 08:45-09:05 10:45-11:05 10:45-11:40p 11:30-12:00 12:35-12:55 12:40-13:00 13:15-13:36 15:00-15:30 15:35-15:55 16:35-16:55 17:20-17:41 17:30-18:25p 18:35-18:55 18:35-19:00 18:35-19:05 19:30-19:50 19:30-19:55 20:30-20:51 20:45-21:05"
+  },
+  // Pontevedra (Estación de Autobuses) → Vigo (Estación Intermodal)
+  PV: {
+    L: "06:55-07:15 08:20-08:40 09:00-09:55p 10:10-10:30 10:45-11:05 11:00-11:55p 11:05-11:25 12:05-12:25 12:30-12:55 12:45-13:40p 12:55-13:15 13:20-13:40 14:05-14:30 14:50-15:45p 15:05-15:25 16:00-16:20 17:00-17:25 17:15-18:10p 17:30-17:50 17:30-17:55 18:00-18:55p 18:15-18:35 19:20-19:40 20:05-20:25 20:45-21:40p 21:15-21:35 21:35-22:00 22:05-22:25 23:15-23:40",
+    S: "10:10-10:30 11:00-11:20 11:05-11:25 11:30-11:55 12:05-12:25 12:30-12:55 13:03-13:58p 13:20-13:40 14:05-14:30 15:35-15:56 17:30-17:55 17:35-17:56 18:15-18:35 19:20-19:40 20:10-20:30 21:15-21:35 21:33-22:28p 21:35-22:00 22:05-22:25 23:00-23:20",
+    D: "10:10-10:30 11:00-11:20 11:05-11:25 11:30-11:55 12:30-12:55 13:03-13:58p 13:20-13:40 14:05-14:30 15:05-15:25 17:05-17:25 17:30-17:55 18:15-18:35 19:20-19:40 19:30-19:55 20:05-20:25 21:15-21:35 21:33-22:28p 21:35-22:00 21:40-22:05 22:05-22:25 23:00-23:20"
+  }
+};
+
+// Trenes: [salida, llegada, tipo, días en que circula]
+// tipo: md = Media Distancia · ave = AVE · alvia = Alvia · reg = Regional
+const TRAIN = {
+  // Vigo Urzáiz → Pontevedra
+  VP_URZ: [
+    ["05:08","05:29","reg","L"],
+    ["05:50","06:05","ave","LS"],
+    ["06:34","06:51","md","LSD"],
+    ["07:32","07:47","alvia","LSD"],
+    ["08:00","08:14","md","LSD"],
+    ["09:05","09:20","md","LSD"],
+    ["10:40","10:54","md","LSD"],
+    ["13:15","13:36","md","LSD"],
+    ["14:35","14:49","md","LS"],
+    ["16:30","16:44","md","LSD"],
+    ["17:40","17:54","md","LSD"],
+    ["18:15","18:29","md","LSD"],
+    ["19:35","19:49","md","LSD"],
+    ["21:50","22:09","md","LSD"]
+  ],
+  // Vigo Guixar → Pontevedra
+  VP_GUI: [
+    ["06:48","07:19","reg","LSD"],
+    ["09:10","09:42","reg","LSD"],
+    ["12:31","13:03","reg","LSD"],
+    ["15:15","15:46","reg","LSD"],
+    ["17:08","17:34","reg","LSD"],
+    ["18:30","19:02","reg","LSD"],
+    ["20:28","20:59","reg","LSD"]
+  ],
+  // Pontevedra → Vigo Urzáiz
+  PV_URZ: [
+    ["08:22","08:45","md","LSD"],
+    ["09:13","09:27","md","LSD"],
+    ["10:13","10:27","md","LSD"],
+    ["11:50","12:04","md","L"],
+    ["12:44","12:58","md","LSD"],
+    ["15:25","15:42","md","LSD"],
+    ["16:13","16:27","md","LSD"],
+    ["18:13","18:27","md","LSD"],
+    ["19:12","19:26","md","LSD"],
+    ["21:15","21:29","md","LSD"],
+    ["22:40","22:57","alvia","LSD"],
+    ["23:28","23:48","md","LSD"]
+  ],
+  // Pontevedra → Vigo Guixar
+  PV_GUI: [
+    ["07:11","07:44","reg","L"],
+    ["11:24","11:58","reg","LSD"],
+    ["14:32","15:04","reg","LSD"],
+    ["16:20","16:53","reg","LSD"],
+    ["17:44","18:18","reg","LSD"],
+    ["21:01","21:33","reg","LSD"],
+    ["21:41","22:14","reg","LSD"],
+    ["23:11","23:44","reg","LSD"]
+  ]
+};
+/* ===================== FIN DE LOS DATOS ===================== */
+
+const CITY = {
+  V: { name: "Vigo",       lat: 42.2328, lon: -8.7226 },
+  P: { name: "Pontevedra", lat: 42.4310, lon: -8.6444 }
+};
+const KIND = {
+  bus:   { label: "BUS",      cls: "k-bus",   long: "bus Monbus" },
+  md:    { label: "MD",       cls: "k-md",    long: "Media Distancia" },
+  ave:   { label: "AVE",      cls: "k-ave",   long: "AVE" },
+  alvia: { label: "ALVIA",    cls: "k-alvia", long: "Alvia" },
+  reg:   { label: "REGIONAL", cls: "k-reg",   long: "Regional" }
+};
+const FILTERS = [
+  { id: "all", label: "Todos" },
+  { id: "bus", label: "Bus" },
+  { id: "urz", label: "Tren Urzáiz" },
+  { id: "gui", label: "Tren Guixar" }
+];
+
+const toMin = s => +s.slice(0, 2) * 60 + +s.slice(3, 5);
+
+/** Todas las salidas de un sentido ("V" o "P" = ciudad de origen) y tipo de día. */
+function departures(from, day) {
+  const dir = from === "V" ? "VP" : "PV", out = [];
+  for (const tok of BUS[dir][day].split(" ")) {
+    const slow = tok.endsWith("p"), [d, a] = tok.replace("p", "").split("-");
+    out.push({ dep: d, arr: a, kind: "bus", group: "bus", slow,
+               station: from === "V" ? "sale de la Estación Intermodal" : "llega a la Estación Intermodal" });
+  }
+  for (const [key, group, st] of [[dir + "_URZ", "urz", "Urzáiz"], [dir + "_GUI", "gui", "Guixar"]]) {
+    for (const [d, a, kind, days] of TRAIN[key]) {
+      if (days.includes(day)) out.push({ dep: d, arr: a, kind, group, stationName: st,
+        station: (from === "V" ? "sale de Vigo " : "llega a Vigo ") + st });
+    }
+  }
+  for (const x of out) { x.depM = toMin(x.dep); x.dur = toMin(x.arr) - x.depM; }
+  return out.sort((x, y) => x.depM - y.depM || x.dur - y.dur);
+}
+
+/* ---------- Hora oficial peninsular (independiente del reloj/zona del dispositivo) ---------- */
+const fmt = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Madrid", hourCycle: "h23",
+  weekday: "short", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+const fmtDate = new Intl.DateTimeFormat("es-ES", { timeZone: "Europe/Madrid", weekday: "long", day: "numeric", month: "short" });
+const qs = new URLSearchParams(location.search);   // ?t=18:05&d=L&from=V sirven para hacer pruebas
+function now() {
+  const p = Object.fromEntries(fmt.formatToParts(new Date()).map(x => [x.type, x.value]));
+  let dow = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(p.weekday);
+  let sec = +p.hour * 3600 + +p.minute * 60 + +p.second;
+  if (qs.get("t")) sec = toMin(qs.get("t")) * 60;
+  return { dow, sec, hhmm: String(Math.floor(sec / 3600)).padStart(2, "0") + ":" + String(Math.floor(sec / 60) % 60).padStart(2, "0") };
+}
+const dayType = dow => dow === 0 ? "D" : dow === 6 ? "S" : "L";
+const DAYNAME = { L: "laborable", S: "sábado", D: "domingo / festivo" };
+
+/* ---------- Estado ---------- */
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+};
+const state = {
+  from: qs.get("from") || (store.get("from") === "V" ? "V" : "P"),
+  filter: FILTERS.some(f => f.id === store.get("filter")) ? store.get("filter") : "all",
+  dayOverride: qs.get("d") || "auto",
+  manual: false,          // el usuario ha cambiado el sentido a mano en esta visita
+  locText: "Buscando ubicación…", locOk: false
+};
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function waitText(mins) {
+  if (mins < 1) return "Sale ya";
+  if (mins < 60) return "en " + mins + " min";
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return "en " + h + " h" + (m ? " " + String(m).padStart(2, "0") : "");
+}
+const svc = x => '<span class="svc">' + esc(KIND[x.kind].label) + "</span>";
+function what(x) {
+  if (x.kind === "bus") return "Monbus · " + (x.slow ? "con paradas" : "directo");
+  return "Vigo " + x.stationName;
+}
+
+function render() {
+  const n = now();
+  const day = state.dayOverride === "auto" ? dayType(n.dow) : state.dayOverride;
+
+  $("clock").innerHTML = esc(fmtDate.format(new Date())) + " · <b>" + n.hhmm + "</b>";
+  for (const b of $("dir").children) b.setAttribute("aria-pressed", b.dataset.from === state.from);
+  $("loc").textContent = state.locText;
+  $("daysel").value = state.dayOverride;
+  $("daysel").options[0].textContent = "Hoy (" + DAYNAME[dayType(n.dow)] + ")";
+
+  $("filters").innerHTML = FILTERS.map(f =>
+    '<button type="button" data-f="' + f.id + '" aria-pressed="' + (state.filter === f.id) + '">' + esc(f.label) + "</button>").join("");
+
+  const all = departures(state.from, day).filter(x => state.filter === "all" || x.group === state.filter);
+  // Se oculta en cuanto pasa el minuto de salida; nunca se muestra nada de mañana.
+  const left = all.filter(x => x.depM * 60 + 60 > n.sec);
+
+  if (!left.length) {
+    const tDay = state.dayOverride === "auto" ? dayType((n.dow + 1) % 7) : state.dayOverride;
+    const first = departures(state.from, tDay).filter(x => state.filter === "all" || x.group === state.filter)[0];
+    $("next").innerHTML = '<div class="empty"><b>No quedan salidas hoy</b><p>' +
+      (first ? "La primera de mañana sale a las <strong class=\"num\">" + first.dep + "</strong> (" + esc(KIND[first.kind].long) + ")." : "No hay servicios con este filtro.") +
+      "</p></div>";
+    $("h2").style.display = "none"; $("list").innerHTML = "";
+    return;
+  }
+
+  const wait = x => waitText(Math.floor((x.depM * 60 - n.sec) / 60));
+  const x = left[0];
+  $("next").innerHTML =
+    '<section class="next ' + KIND[x.kind].cls + '">' +
+      '<div class="lbl">Próxima salida</div>' +
+      '<div class="mid"><span class="dep num">' + x.dep + '</span><span class="in num">' + wait(x) + "</span></div>" +
+      '<div class="what">' + svc(x) + " " + esc(what(x)) + "</div>" +
+      '<div class="det num">Llega a las ' + x.arr + " · " + x.dur + " min" + (x.kind === "bus" ? " · " + esc(x.station) : "") + "</div>" +
+    "</section>";
+
+  const rest = left.slice(1);
+  $("h2").style.display = "";
+  $("h2").textContent = rest.length ? "Siguientes salidas de hoy (" + rest.length + ")" : "Es la última salida de hoy";
+  $("list").innerHTML = rest.map(x =>
+    '<li class="row ' + KIND[x.kind].cls + '">' +
+      '<span class="dep num">' + x.dep + "</span>" +
+      '<div><div class="what">' + svc(x) + " " + esc(what(x)) + "</div>" +
+        '<div class="det num">Llega ' + x.arr + " · " + x.dur + " min</div></div>" +
+      '<span class="in num">' + wait(x) + "</span></li>").join("");
+}
+
+/* ---------- Ubicación: elige el sentido según la ciudad más cercana ---------- */
+function km(a, b) {
+  const R = 6371, r = Math.PI / 180, dLat = (b.lat - a.lat) * r, dLon = (b.lon - a.lon) * r;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+function locate() {
+  if (qs.get("from")) { state.locText = "Modo prueba"; render(); return; }
+  if (!navigator.geolocation) { state.locText = "Ubicación no disponible"; state.locOk = false; render(); return; }
+  state.locText = "Buscando ubicación…"; state.locOk = false; render();
+  navigator.geolocation.getCurrentPosition(pos => {
+    const me = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+    const dV = km(me, CITY.V), dP = km(me, CITY.P), near = dV <= dP ? "V" : "P", d = Math.min(dV, dP);
+    if (d <= 50) {
+      state.locText = "Ubicación: " + (d <= 12 ? "" : "cerca de ") + CITY[near].name + " · actualizar";
+      state.locOk = true;
+      if (!state.manual && state.from !== near) { state.from = near; store.set("from", near); }
+    } else {
+      state.locText = "Ubicación: fuera de la zona · actualizar"; state.locOk = false;
+    }
+    render();
+  }, () => { state.locText = "Ubicación no disponible · reintentar"; state.locOk = false; render(); },
+  { enableHighAccuracy: false, timeout: 8000, maximumAge: 120000 });
+}
+
+/* ---------- Eventos ---------- */
+$("dir").addEventListener("click", e => {
+  const b = e.target.closest("[data-from]"); if (!b || b.dataset.from === state.from) return;
+  state.from = b.dataset.from; state.manual = true; store.set("from", state.from); render(); window.scrollTo({ top: 0 });
+});
+$("filters").addEventListener("click", e => {
+  const b = e.target.closest("[data-f]"); if (!b) return;
+  state.filter = b.dataset.f; store.set("filter", state.filter); render();
+});
+$("daysel").addEventListener("change", e => { state.dayOverride = e.target.value; render(); });
+$("loc").addEventListener("click", () => { state.manual = false; locate(); });
+
+// Al volver a la app tras un rato, se refresca la hora y se vuelve a mirar la ubicación.
+let hiddenAt = 0;
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) { hiddenAt = Date.now(); return; }
+  if (Date.now() - hiddenAt > 10 * 60 * 1000) { state.manual = false; state.dayOverride = "auto"; locate(); }
+  else render();
+});
+window.addEventListener("pageshow", render);
+setInterval(render, 10000);
+
+render();
+locate();
+</script>
+</body>
+</html>
